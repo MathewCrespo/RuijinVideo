@@ -1,0 +1,10 @@
+data_root:/remote-home/share/RJ_video_crop
+log_root:img1
+test_fold:1
+task:BM
+modality:image
+lr:0.0001
+epoch:50
+resume:-1
+batchsize:1
+net:H_Attention_Graph

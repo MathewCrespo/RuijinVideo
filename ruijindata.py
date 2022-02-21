@@ -42,7 +42,7 @@ class RuijinData(Dataset):
             now_patient['label'] = p_label
             filesOfPatient = os.listdir(p_path)
             now_patient['video_root'] = [os.path.join(p_path, x) for x in filesOfPatient if x.endswith('.mp4')]
-            now_patient['img_root'] = [os.path.join(p_path, x) for x in filesOfPatient if x.endswith('.JPG') or x.endswith('.jpg')]  # .jpg should also be read
+            now_patient['img_root'] = [os.path.join(p_path, x) for x in filesOfPatient if x.endswith('.JPG') or x.endswith('.jpg') or x.endswith('.bmp') or x.endswith('.BMP')]  # .jpg should also be read
             if self.task =='BM':
                 self.bm_patient_info.append(now_patient)
             else:

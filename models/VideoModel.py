@@ -1,4 +1,4 @@
-import resnet
+from .resnet import ResNet10
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,7 +12,7 @@ class Res_Attention(nn.Module):
         self.D = D
         self.K = K
 
-        self.feature_extractor_part1 = resnet.ResNet10()
+        self.feature_extractor_part1 = ResNet10()
 
         self.feature_extractor_part2 = nn.Sequential(
             nn.Linear(512 * 7 * 7, self.L),
