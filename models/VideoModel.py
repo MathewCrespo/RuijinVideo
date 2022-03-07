@@ -1,7 +1,8 @@
-from .resnet import ResNet10
+from .resnet import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 #from resnet import resnet18, resnet34
 
 class Res_Attention(nn.Module):
@@ -73,6 +74,68 @@ class Res_Attention(nn.Module):
         neg_log_likelihood = -1. * (Y * torch.log(Y_prob) + (1. - Y) * torch.log(1. - Y_prob))  # negative log bernoulli
         #print("Y_prob is：", Y_prob)
         return  Y_prob, Y_hat ,neg_log_likelihood
+
+class VideoModel1(nn.Module):
+    def __init__(self, num_class=2):
+        super(VideoModel1, self).__init__()
+        self.backbone = torchvision.models.video.r3d_18(pretrained = True)
+        self.classifier = nn.Sequential(
+            nn.Linear(400, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32,16),
+            nn.ReLU(),
+            nn.Linear(16,1),
+            # nn.Linear(400,1),
+            nn.Sigmoid()
+        )
+    
+    def forward(self, x):
+        x = self.backbone(x)
+        x = self.classifier(x)
+        return x
+
+
+
+class VideoModel2(nn.Module):
+    def __init__(self,):
+        super(VideoModel2,self).__init__()
+        #self.norm = nn.LayerNorm(11)
+        self.cnn = torchvision.models.resnet18(pretrained = True)
+        num_ftrs = self.cnn.fc.in_features
+        self.cnn.fc = nn.Linear(num_ftrs, 64)
+        self.l1 = nn.LSTM(
+            input_size=64,
+            hidden_size=64,
+            num_layers = 3,
+            batch_first = True
+        )
+        
+        self.out = nn.Sequential(
+            nn.Linear(64*16,64),
+            nn.ReLU(),
+            nn.Linear(64,32),
+            nn.ReLU(),
+            nn.Linear(32,16),
+            nn.ReLU(),
+            nn.Linear(16,8),
+            nn.ReLU(),
+            nn.Linear(8,1),
+            nn.Sigmoid()
+            )
+        
+    def forward(self,x):
+        #x = self.norm(x)
+        #x:BCTHW
+        out_features = torch.ones((x.shape[0], x.shape[2], 64)).cuda()
+        for i in range(out_features.shape[0]):
+            out_features[i] = self.cnn(x[i].permute(1,0,2,3))
+        r_out, h = self.l1(out_features)
+        final_features = r_out.contiguous().view(r_out.shape[0], -1)
+        out = self.out(final_features)
+        
+        return out
 
 if __name__ == '__main__':
     model = Res_Attention()

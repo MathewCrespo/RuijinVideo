@@ -93,13 +93,22 @@ class RuijinData(Dataset):
         # 转换成tensor
         result_frames = np.stack(result_frames)
         # 注意：此时result_frames组成的维度为[视频帧数量，高，宽，通道数]
-
+        # result_frames = torch.Tensor(np.transpose(result_frames,(0,3,1,2)))
+        sampling_indices = np.random.choice(range(result_frames.shape[0]),16,replace=False)
+        sampling_indices = np.sort(sampling_indices)
+        result_frames = result_frames[sampling_indices]
 
         if self.pre_transform is not None:
-            out_frames = torch.stack((self.pre_transform(result_frames[0]),))
+            # out_frames = torch.stack((result_frames[0],))
+            # for i in range(1, result_frames.shape[0]):
+            #     # frame = self.pre_transform(result_frames[i])
+            #     out_frames = torch.cat((out_frames, frame.unsqueeze(0)))
+            out_frames = torch.ones_like(torch.Tensor(np.transpose(result_frames,(0,3,1,2))))
             for i in range(1, result_frames.shape[0]):
-                frame = self.pre_transform(result_frames[i])
-                out_frames = torch.cat((out_frames, frame.unsqueeze(0)))
+                out_frames[i] = transforms.ToTensor()(result_frames[i])
+
+            out_frames = self.pre_transform(out_frames)
+            out_frames = out_frames.permute((1,0,2,3))#CTHW
         return out_frames
 
 
@@ -112,8 +121,16 @@ class RuijinData(Dataset):
 if __name__ == '__main__':
     pre_transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((224,224)),
+    # transforms.Resize((224,224)),
     ])
-    dataset = RuijinData(root = '/remote-home/share/RJ_video/RJ_video_crop', pre_transform = pre_transform, task = 'ALNM', modality = 'image')
-    print(dataset[1][0].shape)
-    print(len(dataset))
+    # pre_transform = None
+    dataset = RuijinData(root = '/remote-home/share/RJ_video/RJ_video_crop', pre_transform = pre_transform, task = 'ALNM', modality = 'video')
+    min_len = 100000
+    for i in range(len(dataset)):
+        length = dataset[i][0].shape[0]
+        if length < min_len:
+            min_len = length
+        print(i)
+    print(min_len)
+    # print(dataset[0][0].shape)
+        
